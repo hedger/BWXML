@@ -18,20 +18,27 @@ std::string StreamReader::get()
 
 std::string StreamReader::getFixedString(int len)
 {
-  ++len; // get() reads (length-1) chars
-  std::vector<char> buf(len);
-  input.get(reinterpret_cast<char*>(buf.data()), len, '\0');
+	auto buf = getBuffer(len);
+	buf.push_back('\0');
   return std::string(buf.data());
 }
 
-size_t StreamReader::Pos()
+StreamReader::DataBuffer StreamReader::getBuffer(size_t len)
 {
-  return int(input.tellg());
+	DataBuffer buf(len);
+	if (len)
+		input.read(reinterpret_cast<char*>(buf.data()), len);
+	return buf;
 }
 
-size_t StreamReader::Size()
+std::streamoff StreamReader::Pos()
 {
-  size_t ret, oldpos = input.tellg();
+  return input.tellg();
+}
+
+std::streamoff StreamReader::Size()
+{
+  std::streamoff ret, oldpos = input.tellg();
   input.seekg(0, std::ios_base::end);
   ret = input.tellg();
   input.seekg(oldpos);

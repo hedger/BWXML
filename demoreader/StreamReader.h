@@ -1,13 +1,17 @@
+#pragma once
+
 #include <iostream>
 #include <fstream>
 
 #include <string>
+#include <vector>
 
 class StreamReader
 {
   std::ifstream input;
 
 public:
+	typedef std::vector<char> DataBuffer;
   StreamReader(const std::string& fname);
 
   template<typename T>
@@ -19,8 +23,9 @@ public:
   }
 
   std::string get();
+	DataBuffer getBuffer(size_t len);
   std::string getFixedString(int len);
-  size_t Pos();
-  size_t Size();
+  std::streamoff Pos();
+  std::streamoff Size();
   void Advance(size_t offset);
 };
