@@ -34,6 +34,8 @@ BWXMLWriter::BWXMLWriter(const std::string& fname)
 	};
 	if (mTree.size() != 1)
 		throw std::exception("XML file must contain only 1 root level node");
+	
+	mTree.swap(mTree.begin()->second); // swapping the whole tree to its first node
 }
 
 void BWXMLWriter::treeWalker(const ptree& node)
@@ -48,7 +50,7 @@ void BWXMLWriter::treeWalker(const ptree& node)
 void BWXMLWriter::collectStrings()
 {
 	mStrings.clear();
-	treeWalker(mTree.get_child("root")); // FIXME: support other names
+	treeWalker(mTree);
 	std::sort(mStrings.begin(), mStrings.end());
 	mStrings.erase(std::unique(mStrings.begin(), mStrings.end()),
 		mStrings.end());
@@ -120,7 +122,7 @@ void BWXMLWriter::saveTo(const std::string& destname)
 		outstream.putString(*it);
 	outstream.put<char>(0);
 
-	outstream.putBuffer(serializeSection(mTree.get_child("root")));
+	outstream.putBuffer(serializeSection(mTree));
 }
 
 StreamWriter::DataBuffer BWXMLWriter::serializeSection(const ptree& node)
