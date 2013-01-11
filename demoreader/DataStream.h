@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <sstream>
 
 class StreamReader
 {
@@ -28,14 +29,12 @@ public:
 	void Advance(size_t offset);
 };
 
-class StreamWriter
+class StreamBufWriter
 {
-	std::ofstream mOutput;
+	std::ostream mOutput;
 
 public:
-	typedef std::vector<char> DataBuffer;
-	StreamWriter(const std::string& fname);
-	~StreamWriter();
+	StreamBufWriter(std::stringbuf* buf) : mOutput(buf) {};
 
 	template<typename T>
 	void put(const T& buf)
@@ -44,6 +43,4 @@ public:
 	}
 
 	void putString(const std::string& str, bool nullTerminate=true);
-	void putBuffer(DataBuffer buf);
 };
-

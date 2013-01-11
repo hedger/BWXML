@@ -2,24 +2,9 @@
 
 #include <boost/property_tree/xml_parser.hpp>
 #include <algorithm>
-//#include <forward_list>
 
 using boost::property_tree::ptree;
 using namespace BigWorld;
-
-static void concatBuffers(StreamWriter::DataBuffer& a, const StreamWriter::DataBuffer& b)
-{
-	a.reserve(a.size() + b.size());
-	a.insert(a.end(), b.cbegin(), b.cend());
-}
-
-template<typename T>
-static void writeToBuffer(StreamWriter::DataBuffer& a, const T& val)
-{
-	size_t insertPos = a.size();
-	a.resize(a.size()+sizeof(T));
-	memcpy(&(a.data()[insertPos]), &val, sizeof(T));
-}
 
 BWXMLWriter::BWXMLWriter(const std::string& fname)
 {
@@ -108,26 +93,36 @@ BWXMLWriter::rawDataBlock BWXMLWriter::serializeNode(const boost::property_tree:
 
 BigWorld::DataDescriptor BWXMLWriter::BuildDescriptor(rawDataBlock block, int prevOffset)
 {
-	return DataDescriptor(std::get<0>(block), prevOffset + std::get<1>(block).size());
+	return DataDescriptor(block.type, prevOffset + block.data.length());
 }
 
 void BWXMLWriter::saveTo(const std::string& destname)
 {
 	collectStrings();
 	
-	StreamWriter outstream(destname);
+	std::stringstream outbuf;
+	StreamBufWriter outstream(outbuf.rdbuf());
 	outstream.put(BigWorld::PACKED_SECTION_MAGIC);
 	outstream.put<char>(0);
 	for (auto it = mStrings.begin(); it!= mStrings.end(); ++it)
 		outstream.putString(*it);
 	outstream.put<char>(0);
 
-	outstream.putBuffer(serializeSection(mTree));
+	outstream.putString(serializeSection(mTree), false);
+
+	std::ofstream mFile;
+	mFile.open(destname, std::ios::binary);
+	if (!mFile.is_open())
+		throw std::exception("Can't open the file");
+	mFile << outbuf.rdbuf();
+	mFile.close();
 }
 
-StreamWriter::DataBuffer BWXMLWriter::serializeSection(const ptree& node)
+std::string BWXMLWriter::serializeSection(const ptree& node)
 {
-	StreamWriter::DataBuffer ret;
+	std::stringstream _ret;
+	StreamBufWriter ret(_ret.rdbuf());
+
 	rawDataBlock ownData = serializeNode(node, true); // getting own plain content
 	dataArray childData;
 	for (auto it=node.begin(); it!=node.end(); ++it)
@@ -137,72 +132,67 @@ StreamWriter::DataBuffer BWXMLWriter::serializeSection(const ptree& node)
 	}
 
 	DataDescriptor ownDescriptor = BuildDescriptor(ownData, 0);
-	writeToBuffer<short>(ret, node.size());
-	writeToBuffer<DataDescriptor>(ret, ownDescriptor);
-	concatBuffers(ret, std::get<1>(ownData));
+	ret.put<short>(node.size());
+	ret.put<DataDescriptor>(ownDescriptor);
+	ret.putString(ownData.data, false);
 	
 	int currentOffset = ownDescriptor.offset();
 	for (auto it=childData.begin(); it!=childData.end(); ++it)
 	{
 		//std::cout << "off=" << currentOffset << std::endl;
 		DataNode bwNode;
-		bwNode.nameIdx = std::get<0>(*it);
-		bwNode.data = BuildDescriptor(std::get<1>(*it), currentOffset);
-		writeToBuffer<DataNode>(ret, bwNode);
+		bwNode.nameIdx = it->stringId;
+		bwNode.data = BuildDescriptor(it->data, currentOffset);
+		ret.put<DataNode>(bwNode);
 		currentOffset = bwNode.data.offset();
 	}
 	
 	for (auto it=childData.begin(); it!=childData.end(); ++it)
 	{
-		concatBuffers(ret, std::get<1>(std::get<1>(*it)));
+		ret.putString(it->data.data, false);
 	}
 
-	return ret;
+	return _ret.str();
 }
 
-StreamWriter::DataBuffer BWXMLWriter::serializeF(float floatVal)
+std::string BWXMLWriter::serializeF(float floatVal)
 {
-	StreamWriter::DataBuffer ret;
-	ret.resize(sizeof(float));
-	memcpy(ret.data(), &floatVal, sizeof(float));
-	return ret;
+	std::stringstream _ret;
+	StreamBufWriter ret(_ret.rdbuf());
+	ret.put(floatVal);
+	return _ret.str();
 }
 
-StreamWriter::DataBuffer BWXMLWriter::serializeI(unsigned int intVal)
+std::string BWXMLWriter::serializeI(unsigned int intVal)
 {
-	StreamWriter::DataBuffer ret;
+	std::stringstream _ret;
+	StreamBufWriter ret(_ret.rdbuf());
+
 	if (intVal > 0xFFFF)
 	{
-		ret.resize(sizeof(unsigned int));
-		memcpy(ret.data(), &intVal, sizeof(int));
+		ret.put<unsigned int>(intVal);
 	}
 	else if (intVal > 0xFF)
 	{
-		ret.resize(sizeof(unsigned short));
-		unsigned short tmp = static_cast<unsigned short>(intVal);
-		memcpy(ret.data(), &tmp, sizeof(unsigned short));
+		ret.put<unsigned short>(static_cast<unsigned short>(intVal));
 	}
 	else if (intVal > 0)
 	{
-		ret.resize(sizeof(unsigned char));
-		unsigned char tmp = static_cast<unsigned char>(intVal);
-		memcpy(ret.data(), &tmp, sizeof(unsigned char));
+		ret.put<unsigned char>(static_cast<unsigned char>(intVal));
 	}
-	//std::cout << "Compressed 0x" << std::hex << intVal << " to " << std::dec << ret.size() << " b." << std::endl;
-	return ret;
+	return _ret.str();
 }
 
-StreamWriter::DataBuffer BWXMLWriter::serializeB(bool boolVal)
+std::string BWXMLWriter::serializeB(bool boolVal)
 {
-	StreamWriter::DataBuffer ret;
+	std::stringstream _ret;
+	StreamBufWriter ret(_ret.rdbuf());
 	if (boolVal)
-		ret.push_back(1);
-	return ret;
+		ret.put<unsigned char>(1);
+	return _ret.str();
 }
 
-StreamWriter::DataBuffer BWXMLWriter::serializeS(const std::string& stringVal)
+std::string BWXMLWriter::serializeS(const std::string& stringVal)
 {
-	StreamWriter::DataBuffer ret;
-	std::copy(stringVal.cbegin(), stringVal.cend(), std::back_inserter(ret));
-	return ret;
+	return stringVal;
 }

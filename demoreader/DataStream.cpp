@@ -46,29 +46,9 @@ void StreamReader::Advance(size_t offset)
 
 //////////////////////////////////////////////////////////////////////////
 
-StreamWriter::StreamWriter(const std::string& fname)
+void StreamBufWriter::putString(const std::string& str, bool nullTerminate/* =true */)
 {
-	mOutput.open(fname, std::ios::binary);
-	if (!mOutput.is_open())
-		throw std::exception("Can't open the file");
-}
-
-void StreamWriter::putString(const std::string& str, bool nullTerminate/* =true */)
-{
-	DataBuffer strBuf;
-	std::copy(str.begin(), str.end(), std::back_inserter(strBuf));
+	mOutput << str;
 	if (nullTerminate)
-		strBuf.push_back('\0');
-	putBuffer(strBuf);
+		mOutput << '\0';
 }
-
-void StreamWriter::putBuffer(DataBuffer buf)
-{
-	mOutput.write(buf.data(), buf.size());
-}
-
-StreamWriter::~StreamWriter()
-{
-	mOutput.close();
-};
-
