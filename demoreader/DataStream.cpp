@@ -17,26 +17,22 @@ StreamReader::~StreamReader()
 
 std::string StreamReader::getString(int len)
 {
+  std::string ret;
 	if (len)
 	{
-		auto buf = getBuffer(len);
-		buf.push_back('\0');
-		return std::string(buf.data());
+    ret.reserve(len);
+    std::vector<char> buf(len);
+    mInput.read(reinterpret_cast<char*>(buf.data()), len);
+    std::copy(buf.begin(), buf.end(), std::back_inserter(ret));
 	}
-	else
-	{
-		char buf[255] = { 0 };
-		mInput.getline(buf, 255, '\0');
-		return std::string(buf);
-	}
+  return ret;
 }
 
-StreamReader::DataBuffer StreamReader::getBuffer(size_t len)
+std::string StreamReader::getNullTerminatedString()
 {
-	DataBuffer buf(len);
-	if (len)
-		mInput.read(reinterpret_cast<char*>(buf.data()), len);
-	return buf;
+  char buf[255] = { 0 };
+  mInput.getline(buf, 255, '\0');
+  return std::string(buf);
 }
 
 void StreamReader::Advance(size_t offset)

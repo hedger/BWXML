@@ -12,7 +12,6 @@ class StreamReader
 	std::ifstream mInput;
 
 public:
-	typedef std::vector<char> DataBuffer;
 	StreamReader(const std::string& fname);
 	~StreamReader();
 
@@ -24,8 +23,8 @@ public:
 		return buf;
 	}
 
-	std::string getString(int len=0);
-	DataBuffer getBuffer(size_t len);
+	std::string getString(int len);
+  std::string getNullTerminatedString();
 	void Advance(size_t offset);
 };
 

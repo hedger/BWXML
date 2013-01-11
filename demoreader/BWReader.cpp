@@ -4,7 +4,7 @@
 using boost::property_tree::ptree;
 using namespace BigWorld;
 
-static std::string byteArrayToBase64(StreamReader::DataBuffer a)
+static std::string byteArrayToBase64(const std::string& a)
 {
 	static char intToBase64[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/' };
 	int aLen = a.size();
@@ -63,8 +63,10 @@ BWXMLReader::BWXMLReader(const std::string& fname) : mStream(fname)
 
 void BWXMLReader::ReadStringTable()
 {
-	for (std::string tmp = mStream.getString(); !tmp.empty(); tmp = mStream.getString())
-		mStrings.push_back(tmp);
+	for (std::string tmp = mStream.getNullTerminatedString(); 
+    !tmp.empty(); 
+    tmp = mStream.getNullTerminatedString())
+		  mStrings.push_back(tmp);
 	std::cout << "Collected " << mStrings.size() << " strings." << std::endl;
 };
 
@@ -124,7 +126,7 @@ void BWXMLReader::readData(DataDescriptor descr, ptree& current_node, int prev_o
 		mStream.Advance(var_size);
 		break;
 	case BW_Blob:
-		current_node.put_value(byteArrayToBase64(mStream.getBuffer(var_size)));
+		current_node.put_value(byteArrayToBase64(mStream.getString(var_size)));
 		break;
 	case BW_Enc_blob:
 		mStream.Advance(var_size); //TBD
