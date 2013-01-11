@@ -4,6 +4,8 @@
 #include "stdafx.h"
 
 #include "BWReader.h"
+#include "BWWriter.h"
+
 #include <boost/property_tree/xml_parser.hpp>
 
 #include <boost/filesystem.hpp>
@@ -16,7 +18,7 @@ namespace bpo = boost::program_options;
 #include <vector>
 #include <algorithm>
 
-void convert(std::string src, std::string dest)
+void convert(std::string src, std::string dest, bool doPack)
 {
 	//std::cout << src << " -> " << dest << std::endl;
 	static auto settings = boost::property_tree::xml_writer_make_settings('\t', 1);
@@ -41,11 +43,18 @@ std::string FindCommonPrefix(const std::vector<path>& paths)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	int encryptionKey = 0;
+	std::string PP = "d:\\out\\system\\data\\speedtree.xml"; //destructibles graphics_settings speedtree.xml
+	BWXMLWriter w(PP);
+	w.saveTo(PP+".o");
+	boost::property_tree::write_xml(PP+".o.xml", BWXMLReader(PP+".o").toPtree(), std::locale(), boost::property_tree::xml_writer_make_settings('\t', 1));
+
+	return 0;
+	//int encryptionKey = 0;
 	bpo::options_description desc("Allowed options");
 	desc.add_options()
 		("help", "produce help message")
-		("key", bpo::value<int>(&encryptionKey)->default_value(10), "encryption key")
+		("pack", bpo::value<bool>()->default_value(false), "pack files instead of unpacking")
+		//("key", bpo::value<int>(&encryptionKey)->default_value(10), "encryption key")
 		("input", bpo::value< std::vector<std::string> >(), "input files/directories")
 		("output", bpo::value< std::string >()->default_value("decrypted/"), "directory to output files")
 		;
@@ -71,6 +80,8 @@ int _tmain(int argc, _TCHAR* argv[])
 		std::cout << desc;
 		return 0;
 	}
+
+	bool doPack = vm["pack"].as<bool>();
 
 	auto inputPaths = vm["input"].as< std::vector<std::string> >();
 	std::string srcfile = ""; //ret.options[0].value[0];
@@ -122,7 +133,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 			try
 			{
-				convert(it->string(), target_path);
+				convert(it->string(), target_path, doPack);
 			}
 			catch (std::exception e)
 			{

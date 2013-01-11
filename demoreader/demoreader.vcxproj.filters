@@ -24,13 +24,16 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="StreamReader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="BW.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BWReader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BWWriter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DataStream.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -41,10 +44,13 @@
     <ClCompile Include="demoreader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StreamReader.cpp">
+    <ClCompile Include="BWReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BWReader.cpp">
+    <ClCompile Include="BWWriter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DataStream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

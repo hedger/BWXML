@@ -2,6 +2,7 @@
 
 #include <sstream>
 using boost::property_tree::ptree;
+using namespace BigWorld;
 
 static std::string byteArrayToBase64(StreamReader::DataBuffer a)
 {
@@ -57,20 +58,15 @@ BWXMLReader::BWXMLReader(const std::string& fname) : mStream(fname)
 		throw std::exception("Unsupported file version");
 	ReadStringTable();
 
-	tree.put_child("root", ReadSection());
+	mTree.put_child("root", ReadSection());
 };
 
 void BWXMLReader::ReadStringTable()
 {
-	for (std::string tmp = mStream.get(); !tmp.empty(); tmp = mStream.get())
-		strings.push_back(tmp);
-	std::cout << "Collected " << strings.size() << " strings." << std::endl;
+	for (std::string tmp = mStream.getString(); !tmp.empty(); tmp = mStream.getString())
+		mStrings.push_back(tmp);
+	std::cout << "Collected " << mStrings.size() << " strings." << std::endl;
 };
-
-void BWXMLReader::dumppos(const std::string comment)
-{
-	std::cout << comment << " (@ 0x"  << std::hex << mStream.Pos() << ") " << std::dec;
-}
 
 void BWXMLReader::readData(DataDescriptor descr, ptree& current_node, int prev_offset)
 {
@@ -88,7 +84,7 @@ void BWXMLReader::readData(DataDescriptor descr, ptree& current_node, int prev_o
 		current_node.swap(ReadSection()); //yay recursion!
 		break;
 	case BW_String:
-		current_node.put_value(mStream.getFixedString(var_size));
+		current_node.put_value(mStream.getString(var_size));
 		break;
 	case BW_Int:
 		int tmp;
@@ -161,7 +157,7 @@ ptree BWXMLReader::ReadSection()
 	for (auto it = children.begin(); it != children.end(); ++it)
 	{
 		//keys may contain dots, ptree gets confused
-		auto path = ptree::path_type(strings[it->nameIdx], '\0'); // so we make a custom path
+		auto path = ptree::path_type(mStrings[it->nameIdx], '\0'); // so we make a custom path
 		readData(it->data, current_node.add(path, ""), prev_offset); 
 		prev_offset = it->data.offset();
 	}
