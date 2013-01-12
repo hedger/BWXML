@@ -1,51 +1,11 @@
 #include "BWReader.h"
-
+#include "Base64.h"
 #include <sstream>
+
+#include <boost/property_tree/xml_parser.hpp>
+
 using boost::property_tree::ptree;
 using namespace BigWorld;
-
-static std::string byteArrayToBase64(const std::string& a)
-{
-	static char intToBase64[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/' };
-	int aLen = a.size();
-	int numFullGroups = aLen / 3;
-	int numBytesInPartialGroup = aLen - 3 * numFullGroups;
-	int resultLen = 4 * ((aLen + 2) / 3);
-	std::string result;
-	result.reserve(resultLen);
-
-	int inCursor = 0;
-	for (int i = 0; i < numFullGroups; i++)
-	{
-		int byte0 = a[inCursor++] & 0xff;
-		int byte1 = a[inCursor++] & 0xff;
-		int byte2 = a[inCursor++] & 0xff;
-		result.push_back(intToBase64[byte0 >> 2]);
-		result.push_back(intToBase64[(byte0 << 4) & 0x3f | (byte1 >> 4)]);
-		result.push_back(intToBase64[(byte1 << 2) & 0x3f | (byte2 >> 6)]);
-		result.push_back(intToBase64[byte2 & 0x3f]);
-	}
-
-	if (numBytesInPartialGroup != 0)
-	{
-		int byte0 = a[inCursor++] & 0xff;
-		result.push_back(intToBase64[byte0 >> 2]);
-		if (numBytesInPartialGroup == 1)
-		{
-			result.push_back(intToBase64[(byte0 << 4) & 0x3f]);
-			result.append("==");
-		}
-		else
-		{
-			int byte1 = a[inCursor++] & 0xff;
-			result.push_back(intToBase64[(byte0 << 4) & 0x3f | (byte1 >> 4)]);
-			result.push_back(intToBase64[(byte1 << 2) & 0x3f]);
-			result.push_back('=');
-		}
-	}
-
-	return result;
-}
 
 BWXMLReader::BWXMLReader(const std::string& fname) : mStream(fname)
 {
@@ -56,10 +16,16 @@ BWXMLReader::BWXMLReader(const std::string& fname) : mStream(fname)
 	unsigned char version = mStream.get<char>();
 	if (version != 0)
 		throw std::exception("Unsupported file version");
-	ReadStringTable();
+  ReadStringTable();
 
-	mTree.put_child("root", ReadSection());
+  mTree.put_child("root", ReadSection());
 };
+
+void BWXMLReader::saveTo(const std::string& destname)
+{
+  static auto settings = boost::property_tree::xml_writer_make_settings('\t', 1);
+  boost::property_tree::write_xml(destname, mTree, std::locale(), settings);
+}
 
 void BWXMLReader::ReadStringTable()
 {
@@ -83,15 +49,15 @@ void BWXMLReader::readData(DataDescriptor descr, ptree& current_node, int prev_o
 	switch(descr.typeId())
 	{
 	case BW_Section:
-    std::cerr << "BW_Section\n";
+    //std::cerr << "BW_Section\n";
 		current_node.swap(ReadSection()); //yay recursion!
 		break;
 	case BW_String:
-    std::cerr << "BW_String\n";
+    //std::cerr << "BW_String\n";
 		current_node.put_value(mStream.getString(var_size));
 		break;
 	case BW_Int:
-    std::cerr << "BW_Int\n";
+    //std::cerr << "BW_Int\n";
 		int tmp;
 		switch (var_size)
 		{
@@ -113,7 +79,7 @@ void BWXMLReader::readData(DataDescriptor descr, ptree& current_node, int prev_o
 		current_node.put_value(tmp);
 		break;
 	case BW_Float:
-    std::cerr << "BW_Float\n";
+    //std::cerr << "BW_Float\n";
 		assert(var_size % sizeof(float) == 0);
 		
 		for (size_t i=0; i<(var_size / sizeof(float)); ++i)
@@ -125,17 +91,17 @@ void BWXMLReader::readData(DataDescriptor descr, ptree& current_node, int prev_o
 		current_node.put_value(contentBuffer.str());
 		break;
 	case BW_Bool:
-    std::cerr << "BW_Bool\n";
+    //std::cerr << "BW_Bool\n";
 		// false is encoded as 0, that is, no bytes at all
 		current_node.put_value((var_size != 0));
     mStream.getString(var_size);
 		break;
 	case BW_Blob:
-    std::cerr << "BW_Blob\n";
-		current_node.put_value(byteArrayToBase64(mStream.getString(var_size)));
+    //std::cerr << "BW_Blob\n";
+		current_node.put_value(B64::Encode(mStream.getString(var_size)));
 		break;
 	case BW_Enc_blob:
-    std::cerr << "BW_Enc_blob\n";
+    //std::cerr << "BW_Enc_blob\n";
     mStream.getString(var_size); // TBD?
 		//mStream.getBuffer(var_size);
 		current_node.put_value("TYPE_ENCRYPTED_BLOB is (yet) unsupported!");
@@ -167,7 +133,7 @@ ptree BWXMLReader::ReadSection()
 	{
 		//keys may contain dots, ptree gets confused
 		auto path = ptree::path_type(mStrings[it->nameIdx], '\0'); // so we make a custom path
-    std::cerr << ">> " << mStrings[it->nameIdx] << " is ";
+    //std::cerr << ">> " << mStrings[it->nameIdx] << " is ";
 		readData(it->data, current_node.add(path, ""), prev_offset); 
 		prev_offset = it->data.offset();
 	}

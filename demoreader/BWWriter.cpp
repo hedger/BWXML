@@ -1,4 +1,5 @@
 #include "BWWriter.h"
+#include "Base64.h"
 
 #include <boost/property_tree/xml_parser.hpp>
 #include <algorithm>
@@ -45,7 +46,7 @@ int BWXMLWriter::resolveString(const std::string& str)
 {
 	auto pos = std::find(mStrings.begin(), mStrings.end(), str);
 	if (pos == mStrings.end())
-		throw("String key not found!");
+		throw std::exception("String key not found!");
 	return (pos - mStrings.begin());
 }
 
@@ -59,12 +60,19 @@ BWXMLWriter::rawDataBlock BWXMLWriter::serializeNode(const boost::property_tree:
   std::string strVal = node_value.get_value<std::string>();
   if (strVal.empty())
   {
-   return rawDataBlock(BW_String, "");
+    //std::cerr << "PACK: '" << strVal << "' -> BW_String\n";
+    return rawDataBlock(BW_String, "");
   }
 
   // contains a dot, maybe that's a float/floats?
   // but values with 'f' in the end are strings!
-  if (strVal.find('.') && (strVal.find('f') == std::string::npos))
+  //static int i = 2;
+  //if (strVal == "151 231 233")
+  //{
+  //  i++;
+  //}
+  if ((strVal.find('.') != std::string::npos)  
+    && (strVal.find('f') == std::string::npos))
   {
     std::vector<float> values;
     float tmp;
@@ -83,6 +91,7 @@ BWXMLWriter::rawDataBlock BWXMLWriter::serializeNode(const boost::property_tree:
         if (ss.eof() || ss.fail())
           break;
       }
+      //std::cerr << "PACK: '" << strVal << "' -> BW_Float\n";
       return rawDataBlock(BW_Float, serializeF(values));
     }
   }
@@ -90,17 +99,27 @@ BWXMLWriter::rawDataBlock BWXMLWriter::serializeNode(const boost::property_tree:
 	try
 	{
 		int val = node_value.get_value<int>();
+    //std::cerr << "PACK: '" << strVal << "' -> BW_Int\n";
 		return rawDataBlock(BW_Int, serializeI(val));
 	}
-	catch (const boost::property_tree::ptree_bad_data& e)	{ }
+	catch (const boost::property_tree::ptree_bad_data&)	{ }
 
   try
 	{
 		bool val = node_value.get_value<bool>();
+    //std::cerr << "PACK: '" << strVal << "' -> BW_Bool\n";
 		return rawDataBlock(BW_Bool, serializeB(val));
 	}
-	catch (const boost::property_tree::ptree_bad_data& e)	{ }
+	catch (const boost::property_tree::ptree_bad_data&)	{ }
 
+  //check if we can B64 this
+  if (B64::Is(strVal))
+  {
+    //std::cerr << "PACK: '" << strVal << "' -> BW_Blob\n";
+    return rawDataBlock(BW_Blob, B64::Decode(strVal));
+  }
+
+  //std::cerr << "PACK: '" << strVal << "' -> BW_String\n";
 	return rawDataBlock(BW_String, strVal);
 }
 
@@ -129,6 +148,8 @@ void BWXMLWriter::saveTo(const std::string& destname)
 		throw std::exception("Can't open the file");
 	mFile << outbuf.rdbuf();
 	mFile.close();
+
+  std::cout << "Success" << std::endl;
 }
 
 std::string BWXMLWriter::serializeSection(const ptree& node)

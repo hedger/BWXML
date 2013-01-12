@@ -10,11 +10,7 @@ class BWXMLReader
 {
 public:
   BWXMLReader(const std::string& fname);
-
-  boost::property_tree::ptree toPtree()
-  {
-    return mTree;
-  };
+  void saveTo(const std::string& destname);
 
 protected:
   StreamReader mStream;

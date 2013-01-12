@@ -6,8 +6,6 @@
 #include "BWReader.h"
 #include "BWWriter.h"
 
-#include <boost/property_tree/xml_parser.hpp>
-
 #include <boost/filesystem.hpp>
 using namespace boost::filesystem;
 
@@ -21,8 +19,10 @@ namespace bpo = boost::program_options;
 void convert(std::string src, std::string dest, bool doPack)
 {
 	//std::cout << src << " -> " << dest << std::endl;
-	static auto settings = boost::property_tree::xml_writer_make_settings('\t', 1);
-	boost::property_tree::write_xml(dest, BWXMLReader(src).toPtree(), std::locale(), settings);
+  if (doPack)
+    BWXMLWriter(src).saveTo(dest);
+  else
+    BWXMLReader(src).saveTo(dest);
 }
 
 std::string FindCommonPrefix(const std::vector<path>& paths)
@@ -43,20 +43,22 @@ std::string FindCommonPrefix(const std::vector<path>& paths)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	std::string PP = "d:\\Temp\\WOT\\engine_config.xml"; //destructibles graphics_settings speedtree.xml
-  convert(PP+".orig", PP, false);
-	BWXMLWriter w(PP);
-	w.saveTo(PP+".o");
-	boost::property_tree::write_xml(PP+".o.xml", BWXMLReader(PP+".o").toPtree(), std::locale(), boost::property_tree::xml_writer_make_settings('\t', 1));
-  return 0;
+	//std::string PP = "d:\\Temp\\WOT\\fire_small.xml"; //destructibles graphics_settings speedtree.xml
+ // convert(PP+".orig", PP, false);
+	//BWXMLWriter w(PP);
+	//w.saveTo(PP+".o");
+	//boost::property_tree::write_xml(PP+".o.xml", BWXMLReader(PP+".o").toPtree(), std::locale(), boost::property_tree::xml_writer_make_settings('\t', 1));
+ // return 0;
 
 	//int encryptionKey = 0;
+  bool selfTest = false;
 	bpo::options_description desc("Allowed options");
 	desc.add_options()
 		("help", "produce help message")
 		("pack", bpo::value<bool>()->default_value(false), "pack files instead of unpacking")
 		//("key", bpo::value<int>(&encryptionKey)->default_value(10), "encryption key")
 		("input", bpo::value< std::vector<std::string> >(), "input files/directories")
+    ("selftest", bpo::value< bool >(&selfTest)->default_value(false), "perform re-packing")
 		("output", bpo::value< std::string >()->default_value("decrypted/"), "directory to output files")
 		;
 
@@ -135,6 +137,8 @@ int _tmain(int argc, _TCHAR* argv[])
 			try
 			{
 				convert(it->string(), target_path, doPack);
+        if (selfTest)
+          convert(target_path, target_path+".test", !doPack);
 			}
 			catch (std::exception e)
 			{
