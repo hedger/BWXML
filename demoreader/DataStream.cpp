@@ -35,11 +35,6 @@ std::string StreamReader::getNullTerminatedString()
   return std::string(buf);
 }
 
-void StreamReader::Advance(size_t offset)
-{
-  mInput.seekg(offset, std::ios_base::cur);
-}
-
 //////////////////////////////////////////////////////////////////////////
 
 void StreamBufWriter::putString(const std::string& str, bool nullTerminate/* =true */)

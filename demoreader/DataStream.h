@@ -25,7 +25,6 @@ public:
 
 	std::string getString(int len);
   std::string getNullTerminatedString();
-	void Advance(size_t offset);
 };
 
 class StreamBufWriter

@@ -40,9 +40,8 @@ protected:
 	BigWorld::DataDescriptor BuildDescriptor(rawDataBlock block, int prevOffset);
 	rawDataBlock serializeNode(const boost::property_tree::ptree& nodeVal, bool simple);
 
-	std::string serializeF(float floatVal);
+	std::string serializeF(std::vector<float> floatVals);
 	std::string serializeI(unsigned int intVal);
 	std::string serializeB(bool boolVal);
-	std::string serializeS(const std::string& stringVal);
 	std::string serializeSection(const boost::property_tree::ptree& section);
 };

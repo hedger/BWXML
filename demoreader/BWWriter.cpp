@@ -56,39 +56,52 @@ BWXMLWriter::rawDataBlock BWXMLWriter::serializeNode(const boost::property_tree:
 		return rawDataBlock(BW_Section, serializeSection(node_value));
 	}
 
+  std::string strVal = node_value.get_value<std::string>();
+  if (strVal.empty())
+  {
+   return rawDataBlock(BW_String, "");
+  }
+
+  // contains a dot, maybe that's a float/floats?
+  // but values with 'f' in the end are strings!
+  if (strVal.find('.') && (strVal.find('f') == std::string::npos))
+  {
+    std::vector<float> values;
+    float tmp;
+    std::stringstream ss;
+
+    ss << strVal;
+    ss >> tmp;
+    if (!ss.fail() && !ss.eof()) // that WAS a float
+    {
+      values.push_back(tmp);
+      while (true)
+      {
+        ss >> tmp;
+        if (!ss.fail())
+          values.push_back(tmp);
+        if (ss.eof() || ss.fail())
+          break;
+      }
+      return rawDataBlock(BW_Float, serializeF(values));
+    }
+  }
+
 	try
 	{
 		int val = node_value.get_value<int>();
-		//std::cout << "int!" << val << std::endl;
 		return rawDataBlock(BW_Int, serializeI(val));
 	}
 	catch (const boost::property_tree::ptree_bad_data& e)	{ }
 
-	try
-	{
-		float val = node_value.get_value<float>();
-		//std::cout << "float!" << val << std::endl;
-		return rawDataBlock(BW_Float, serializeF(val));
-	}
-	catch (const boost::property_tree::ptree_bad_data& e)	{ }
-
-	try
+  try
 	{
 		bool val = node_value.get_value<bool>();
-		//std::cout << "bool!" << val << std::endl;
 		return rawDataBlock(BW_Bool, serializeB(val));
 	}
 	catch (const boost::property_tree::ptree_bad_data& e)	{ }
 
-	try
-	{
-		std::string val = node_value.get_value<std::string>();
-		//std::cout << "string!" << val << std::endl;
-		return rawDataBlock(BW_String, serializeS(val));
-	}
-	catch (const boost::property_tree::ptree_bad_data& e)	{ }
-
-	throw std::exception("Couldn't find a conversion!");
+	return rawDataBlock(BW_String, strVal);
 }
 
 BigWorld::DataDescriptor BWXMLWriter::BuildDescriptor(rawDataBlock block, int prevOffset)
@@ -155,11 +168,11 @@ std::string BWXMLWriter::serializeSection(const ptree& node)
 	return _ret.str();
 }
 
-std::string BWXMLWriter::serializeF(float floatVal)
+std::string BWXMLWriter::serializeF(std::vector<float> floatVals)
 {
 	std::stringstream _ret;
 	StreamBufWriter ret(_ret.rdbuf());
-	ret.put(floatVal);
+  std::for_each(floatVals.begin(), floatVals.end(), [&](float v){ ret.put<float>(v); });
 	return _ret.str();
 }
 
@@ -190,9 +203,4 @@ std::string BWXMLWriter::serializeB(bool boolVal)
 	if (boolVal)
 		ret.put<unsigned char>(1);
 	return _ret.str();
-}
-
-std::string BWXMLWriter::serializeS(const std::string& stringVal)
-{
-	return stringVal;
 }

@@ -83,12 +83,15 @@ void BWXMLReader::readData(DataDescriptor descr, ptree& current_node, int prev_o
 	switch(descr.typeId())
 	{
 	case BW_Section:
+    std::cerr << "BW_Section\n";
 		current_node.swap(ReadSection()); //yay recursion!
 		break;
 	case BW_String:
+    std::cerr << "BW_String\n";
 		current_node.put_value(mStream.getString(var_size));
 		break;
 	case BW_Int:
+    std::cerr << "BW_Int\n";
 		int tmp;
 		switch (var_size)
 		{
@@ -110,6 +113,7 @@ void BWXMLReader::readData(DataDescriptor descr, ptree& current_node, int prev_o
 		current_node.put_value(tmp);
 		break;
 	case BW_Float:
+    std::cerr << "BW_Float\n";
 		assert(var_size % sizeof(float) == 0);
 		
 		for (size_t i=0; i<(var_size / sizeof(float)); ++i)
@@ -121,15 +125,18 @@ void BWXMLReader::readData(DataDescriptor descr, ptree& current_node, int prev_o
 		current_node.put_value(contentBuffer.str());
 		break;
 	case BW_Bool:
+    std::cerr << "BW_Bool\n";
 		// false is encoded as 0, that is, no bytes at all
 		current_node.put_value((var_size != 0));
-		mStream.Advance(var_size);
+    mStream.getString(var_size);
 		break;
 	case BW_Blob:
+    std::cerr << "BW_Blob\n";
 		current_node.put_value(byteArrayToBase64(mStream.getString(var_size)));
 		break;
 	case BW_Enc_blob:
-		mStream.Advance(var_size); //TBD
+    std::cerr << "BW_Enc_blob\n";
+    mStream.getString(var_size); // TBD?
 		//mStream.getBuffer(var_size);
 		current_node.put_value("TYPE_ENCRYPTED_BLOB is (yet) unsupported!");
 		std::cerr <<"unsupported section TYPE_ENCRYPTED_BLOB!" << std::endl;
@@ -160,6 +167,7 @@ ptree BWXMLReader::ReadSection()
 	{
 		//keys may contain dots, ptree gets confused
 		auto path = ptree::path_type(mStrings[it->nameIdx], '\0'); // so we make a custom path
+    std::cerr << ">> " << mStrings[it->nameIdx] << " is ";
 		readData(it->data, current_node.add(path, ""), prev_offset); 
 		prev_offset = it->data.offset();
 	}

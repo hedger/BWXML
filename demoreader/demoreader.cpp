@@ -43,12 +43,13 @@ std::string FindCommonPrefix(const std::vector<path>& paths)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	//std::string PP = "d:\\out\\system\\data\\speedtree.xml"; //destructibles graphics_settings speedtree.xml
-	//BWXMLWriter w(PP);
-	//w.saveTo(PP+".o");
-	//boost::property_tree::write_xml(PP+".o.xml", BWXMLReader(PP+".o").toPtree(), std::locale(), boost::property_tree::xml_writer_make_settings('\t', 1));
+	std::string PP = "d:\\Temp\\WOT\\engine_config.xml"; //destructibles graphics_settings speedtree.xml
+  convert(PP+".orig", PP, false);
+	BWXMLWriter w(PP);
+	w.saveTo(PP+".o");
+	boost::property_tree::write_xml(PP+".o.xml", BWXMLReader(PP+".o").toPtree(), std::locale(), boost::property_tree::xml_writer_make_settings('\t', 1));
+  return 0;
 
-	//return 0;
 	//int encryptionKey = 0;
 	bpo::options_description desc("Allowed options");
 	desc.add_options()
