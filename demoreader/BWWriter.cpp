@@ -1,7 +1,9 @@
 #include "BWWriter.h"
 #include "Base64.h"
+#include "BWCommon.h"
 
 #include <boost/property_tree/xml_parser.hpp>
+#include <boost/algorithm/string.hpp>
 #include <algorithm>
 
 using boost::property_tree::ptree;
@@ -40,6 +42,9 @@ void BWXMLWriter::collectStrings()
 	std::sort(mStrings.begin(), mStrings.end());
 	mStrings.erase(std::unique(mStrings.begin(), mStrings.end()),
 		mStrings.end());
+	auto commentIdx = std::find(mStrings.begin(), mStrings.end(), "<xmlcomment>");
+	if (commentIdx != mStrings.end())
+		mStrings.erase(commentIdx);
 }
 
 int BWXMLWriter::resolveString(const std::string& str)
@@ -50,77 +55,16 @@ int BWXMLWriter::resolveString(const std::string& str)
 	return (pos - mStrings.begin());
 }
 
-BWXMLWriter::rawDataBlock BWXMLWriter::serializeNode(const boost::property_tree::ptree& node_value, bool simple)
+rawDataBlock BWXMLWriter::serializeNode(const boost::property_tree::ptree& node_value, bool simple)
 {
-	if (!simple && node_value.size()) // has sub-nodes
+	if (!simple && node_value.size() && (!node_value.get("<xmlcomment>", "N/A").compare("N/A"))) // has sub-nodes
 	{
 		return rawDataBlock(BW_Section, serializeSection(node_value));
 	}
 
-  std::string strVal = node_value.get_value<std::string>();
-  if (strVal.empty())
-  {
-    //std::cerr << "PACK: '" << strVal << "' -> BW_String\n";
-    return rawDataBlock(BW_String, "");
-  }
-
-  // contains a dot, maybe that's a float/floats?
-  // but values with 'f' in the end are strings!
-  //static int i = 2;
-  //if (strVal == "151 231 233")
-  //{
-  //  i++;
-  //}
-  if ((strVal.find('.') != std::string::npos)  
-    && (strVal.find('f') == std::string::npos))
-  {
-    std::vector<float> values;
-    float tmp;
-    std::stringstream ss;
-
-    ss << strVal;
-    ss >> tmp;
-    if (!ss.fail() && !ss.eof()) // that WAS a float
-    {
-      values.push_back(tmp);
-      while (true)
-      {
-        ss >> tmp;
-        if (!ss.fail())
-          values.push_back(tmp);
-        if (ss.eof() || ss.fail())
-          break;
-      }
-      //std::cerr << "PACK: '" << strVal << "' -> BW_Float\n";
-      return rawDataBlock(BW_Float, serializeF(values));
-    }
-  }
-
-	try
-	{
-		int val = node_value.get_value<int>();
-    //std::cerr << "PACK: '" << strVal << "' -> BW_Int\n";
-		return rawDataBlock(BW_Int, serializeI(val));
-	}
-	catch (const boost::property_tree::ptree_bad_data&)	{ }
-
-  try
-	{
-		bool val = node_value.get_value<bool>();
-    //std::cerr << "PACK: '" << strVal << "' -> BW_Bool\n";
-		return rawDataBlock(BW_Bool, serializeB(val));
-	}
-	catch (const boost::property_tree::ptree_bad_data&)	{ }
-
-  //check if we can B64 this
-  if (B64::Is(strVal))
-  {
-    //std::cerr << "PACK: '" << strVal << "' -> BW_Blob\n";
-    return rawDataBlock(BW_Blob, B64::Decode(strVal));
-  }
-
-  //std::cerr << "PACK: '" << strVal << "' -> BW_String\n";
-	return rawDataBlock(BW_String, strVal);
+	if (!node_value.get("<xmlcomment>", "").compare("BW_String"))
+		return rawDataBlock(BW_String, node_value.data()); 
+	return PackBuffer(node_value.data());
 }
 
 BigWorld::DataDescriptor BWXMLWriter::BuildDescriptor(rawDataBlock block, int prevOffset)
@@ -162,11 +106,13 @@ std::string BWXMLWriter::serializeSection(const ptree& node)
 	for (auto it=node.begin(); it!=node.end(); ++it)
 	{
 		//std::cout << "For " << it->first << " : ";
+		if (!it->first.compare("<xmlcomment>")) // skipping comments
+			continue;
 		childData.push_back(dataBlock(resolveString(it->first), serializeNode(it->second, false)));
 	}
 
 	DataDescriptor ownDescriptor = BuildDescriptor(ownData, 0);
-	ret.put<short>(node.size());
+	ret.put<short>(childData.size());
 	ret.put<DataDescriptor>(ownDescriptor);
 	ret.putString(ownData.data, false);
 	
@@ -189,39 +135,3 @@ std::string BWXMLWriter::serializeSection(const ptree& node)
 	return _ret.str();
 }
 
-std::string BWXMLWriter::serializeF(std::vector<float> floatVals)
-{
-	std::stringstream _ret;
-	StreamBufWriter ret(_ret.rdbuf());
-  std::for_each(floatVals.begin(), floatVals.end(), [&](float v){ ret.put<float>(v); });
-	return _ret.str();
-}
-
-std::string BWXMLWriter::serializeI(unsigned int intVal)
-{
-	std::stringstream _ret;
-	StreamBufWriter ret(_ret.rdbuf());
-
-	if (intVal > 0xFFFF)
-	{
-		ret.put<unsigned int>(intVal);
-	}
-	else if (intVal > 0xFF)
-	{
-		ret.put<unsigned short>(static_cast<unsigned short>(intVal));
-	}
-	else if (intVal > 0)
-	{
-		ret.put<unsigned char>(static_cast<unsigned char>(intVal));
-	}
-	return _ret.str();
-}
-
-std::string BWXMLWriter::serializeB(bool boolVal)
-{
-	std::stringstream _ret;
-	StreamBufWriter ret(_ret.rdbuf());
-	if (boolVal)
-		ret.put<unsigned char>(1);
-	return _ret.str();
-}
