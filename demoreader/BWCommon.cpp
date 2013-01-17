@@ -65,16 +65,14 @@ rawDataBlock PackBuffer(const std::string& strVal)
 
 		ss << strVal;
 		ss >> tmp;
-		if (!ss.fail() && !ss.eof()) // that WAS a float
+		if (!ss.fail()) // that WAS a float
 		{
 			values.push_back(tmp);
-			while (true)
+			while (!ss.eof() && !ss.fail())
 			{
 				ss >> tmp;
 				if (!ss.fail())
 					values.push_back(tmp);
-				if (ss.eof() || ss.fail())
-					break;
 			}
 			//std::cerr << "PACK: '" << strVal << "' -> BW_Float\n";
 			return rawDataBlock(BW_Float, serializeF(values));

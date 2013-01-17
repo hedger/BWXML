@@ -87,6 +87,7 @@ void BWXMLReader::readData(DataDescriptor descr, ptree& current_node, int prev_o
 	case BW_Float:
     //std::cerr << "BW_Float\n";
 		assert(var_size % sizeof(float) == 0);
+		contentBuffer << std::fixed << std::setfill('\t');;
 		
 		for (size_t i=0; i<(var_size / sizeof(float)); ++i)
 		{
