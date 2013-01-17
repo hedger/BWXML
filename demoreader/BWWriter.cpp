@@ -4,7 +4,9 @@
 
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 #include <algorithm>
+#include <boost/assign.hpp>
 
 using boost::property_tree::ptree;
 using namespace BigWorld;
@@ -42,9 +44,15 @@ void BWXMLWriter::collectStrings()
 	std::sort(mStrings.begin(), mStrings.end());
 	mStrings.erase(std::unique(mStrings.begin(), mStrings.end()),
 		mStrings.end());
-	auto commentIdx = std::find(mStrings.begin(), mStrings.end(), "<xmlcomment>");
-	if (commentIdx != mStrings.end())
-		mStrings.erase(commentIdx);
+
+	static std::vector<std::string> namesToClear = boost::assign::list_of\
+		("<xmlcomment>")("row0")("row1")("row2")("row3");
+	for (auto str=namesToClear.begin(); str!=namesToClear.end(); ++str)
+	{
+		auto strIdx = std::find(mStrings.begin(), mStrings.end(), *str);
+		if (strIdx != mStrings.end())
+			mStrings.erase(strIdx);
+	}
 }
 
 int BWXMLWriter::resolveString(const std::string& str)
@@ -57,6 +65,29 @@ int BWXMLWriter::resolveString(const std::string& str)
 
 rawDataBlock BWXMLWriter::serializeNode(const boost::property_tree::ptree& node_value, bool simple)
 {
+	if (node_value.size() == 4) // maybe that's a matrix?..
+	{
+		std::vector<boost::optional< const ptree& > > rows;
+		for (int i=0; i<4; ++i)
+		{
+			auto row = node_value.get_child_optional("row"+boost::lexical_cast<std::string>(i));
+			if (!row) // bad luck.
+				break;
+			rows.push_back(row);
+		}
+		if (rows.size() == 4) // we've found all 4 required rows
+		{
+			std::stringstream buffer;
+			for (auto it=rows.begin(); it!=rows.end(); ++it)
+			{
+				rawDataBlock block = PackBuffer((*it)->data());
+				assert(block.type == BW_Float);	// better safe than sorry
+				buffer << block.data;
+			}
+			return rawDataBlock(BW_Float, buffer.str());
+		}
+	}
+
 	if (!simple && node_value.size() && (!node_value.get("<xmlcomment>", "N/A").compare("N/A"))) // has sub-nodes
 	{
 		return rawDataBlock(BW_Section, serializeSection(node_value));

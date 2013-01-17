@@ -84,7 +84,7 @@ rawDataBlock PackBuffer(const std::string& strVal)
 		ss << strVal;
 		int i;
 		ss >> i;
-		if (!ss.bad() && ss.eof())
+		if (!ss.fail() && ss.eof())
 			return rawDataBlock(BW_Int, serializeI(i));
 	}
 

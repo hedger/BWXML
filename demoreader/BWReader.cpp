@@ -4,6 +4,7 @@
 
 #include <sstream>
 #include <boost/property_tree/xml_parser.hpp>
+#include <boost/lexical_cast.hpp>
 
 using boost::property_tree::ptree;
 using namespace BigWorld;
@@ -87,8 +88,23 @@ void BWXMLReader::readData(DataDescriptor descr, ptree& current_node, int prev_o
 	case BW_Float:
     //std::cerr << "BW_Float\n";
 		assert(var_size % sizeof(float) == 0);
-		contentBuffer << std::fixed << std::setfill('\t');;
-		
+		contentBuffer << std::fixed << std::setfill('\t');
+		if (var_size / sizeof(float) == 12) // we've got a matrix!
+		{
+			for (int i=0; i<4; ++i) // rows
+			{
+				for (int j=0; j<3; ++j) //columns
+				{
+					if (!contentBuffer.str().empty())
+						contentBuffer << " ";
+					contentBuffer << mStream.get<float>();
+				}
+				current_node.put("row"+boost::lexical_cast<std::string>(i), contentBuffer.str());
+				contentBuffer.str(""); // clearing our buffer
+			}
+			break;
+		}
+		// not a matrix, building a plain string
 		for (size_t i=0; i<(var_size / sizeof(float)); ++i)
 		{
 			if (!contentBuffer.str().empty())
