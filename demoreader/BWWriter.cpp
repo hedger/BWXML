@@ -88,7 +88,7 @@ rawDataBlock BWXMLWriter::serializeNode(const boost::property_tree::ptree& node_
 		}
 	}
 
-	if (!simple && node_value.size() && (!node_value.get("<xmlcomment>", "N/A").compare("N/A"))) // has sub-nodes
+	if (!simple && node_value.size() && (!node_value.get_child_optional("<xmlcomment>"))) // has sub-nodes
 	{
 		return rawDataBlock(BW_Section, serializeSection(node_value));
 	}

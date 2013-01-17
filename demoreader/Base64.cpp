@@ -33,8 +33,8 @@ namespace B64
 
   std::string Decode(std::string src)
   {
-    //src.push_back(0); // fuck you, boost
-
+    while ((src.length()) % 4 != 0) // fuck you, boost
+      src.push_back(0);
     return std::string(binary_t(src.begin()), binary_t(src.end()));
   }
 
@@ -43,7 +43,7 @@ namespace B64
     try
     {
       std::string tmp = Decode(src);
-			bool ret = !Encode(tmp).compare(src);
+      bool ret = !Encode(tmp).compare(src);
       return (ret);
     }
 		catch (const boost::archive::iterators::dataflow_exception&)
