@@ -69,7 +69,7 @@ namespace BWPack
 				current_node.put_value(mStream.get<short>());
 				break;
 			case 1:
-				current_node.put_value(mStream.get<char>());
+				current_node.put_value(static_cast<int>(mStream.get<char>()));
 				break;
 			case 0:
 				current_node.put_value(0);
