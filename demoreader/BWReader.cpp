@@ -42,8 +42,6 @@ void BWXMLReader::readData(DataDescriptor descr, ptree& current_node, int prev_o
 {
 	current_node.clear();
 	int startPos = prev_offset, endPos = descr.offset();
-	//if (!endPos)
-	//	return;
 	int var_size = endPos - startPos;
 	assert(var_size >= 0);
 
@@ -51,42 +49,34 @@ void BWXMLReader::readData(DataDescriptor descr, ptree& current_node, int prev_o
 	switch(descr.typeId())
 	{
 	case BW_Section:
-    //std::cerr << "BW_Section\n";
 		current_node.swap(ReadSection()); //yay recursion!
-		//current_node.put("<xmlcomment>", "BW_Section");
 		break;
 	case BW_String:
-    //std::cerr << "BW_String\n";
 		contentBuffer << mStream.getString(var_size);
 		if (PackBuffer(contentBuffer.str()).type != BW_String)
 			current_node.put("<xmlcomment>", "BW_String");
 		current_node.put_value(contentBuffer.str());
 		break;
 	case BW_Int:
-    //std::cerr << "BW_Int\n";
-		int tmp;
 		switch (var_size)
 		{
 		case 4:
-			tmp = mStream.get<int>();
+			current_node.put_value(mStream.get<int>());
 			break;
 		case 2:
-			tmp = mStream.get<short>();
+			current_node.put_value(mStream.get<short>());
 			break;
 		case 1:
-			tmp = mStream.get<char>();
+			current_node.put_value(mStream.get<char>());
 			break;
 		case 0:
-			tmp = 0;
+			current_node.put_value(0);
 			break;
 		default:
 			throw std::exception("Unsupported int size!");
 		}
-		current_node.put_value(tmp);
-		//current_node.put("<xmlcomment>", "BW_Int");
 		break;
 	case BW_Float:
-    //std::cerr << "BW_Float\n";
 		assert(var_size % sizeof(float) == 0);
 		contentBuffer << std::fixed << std::setfill('\t');
 		if (var_size / sizeof(float) == 12) // we've got a matrix!
@@ -112,26 +102,17 @@ void BWXMLReader::readData(DataDescriptor descr, ptree& current_node, int prev_o
 			contentBuffer << mStream.get<float>();
 		}
 		current_node.put_value(contentBuffer.str());
-		//current_node.put("<xmlcomment>", "BW_Float");
 		break;
 	case BW_Bool:
-    //std::cerr << "BW_Bool\n";
-		// false is encoded as 0, that is, no bytes at all
 		current_node.put_value((var_size != 0));
-		//current_node.put("<xmlcomment>", "BW_Bool");
     mStream.getString(var_size);
 		break;
 	case BW_Blob:
-    //std::cerr << "BW_Blob\n";
 		current_node.put_value(B64::Encode(mStream.getString(var_size)));
-		//current_node.put("<xmlcomment>", "BW_Blob");
 		break;
 	case BW_Enc_blob:
-    //std::cerr << "BW_Enc_blob\n";
     mStream.getString(var_size); // TBD?
-		//mStream.getBuffer(var_size);
 		current_node.put_value("TYPE_ENCRYPTED_BLOB is (yet) unsupported!");
-		//current_node.put("<xmlcomment>", "BW_Enc_blob");
 		std::cerr <<"unsupported section TYPE_ENCRYPTED_BLOB!" << std::endl;
 		break;
 	default:
@@ -158,9 +139,9 @@ ptree BWXMLReader::ReadSection()
 	int prev_offset = ownData.offset();
 	for (auto it = children.begin(); it != children.end(); ++it)
 	{
+		assert(it->nameIdx < mStrings.size());
 		//keys may contain dots, ptree gets confused
 		auto path = ptree::path_type(mStrings[it->nameIdx], '\0'); // so we make a custom path
-    //std::cerr << ">> " << mStrings[it->nameIdx] << " is ";
 		readData(it->data, current_node.add(path, ""), prev_offset); 
 		prev_offset = it->data.offset();
 	}

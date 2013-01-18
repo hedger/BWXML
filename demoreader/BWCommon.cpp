@@ -17,23 +17,19 @@ static std::string serializeF(std::vector<float> floatVals)
 	return _ret.str();
 }
 
-static std::string serializeI(unsigned int intVal)
+static std::string serializeI(int intVal)
 {
 	std::stringstream _ret;
 	StreamBufWriter ret(_ret.rdbuf());
 
-	if (intVal > 0xFFFF)
-	{
-		ret.put<unsigned int>(intVal);
-	}
-	else if (intVal > 0xFF)
-	{
-		ret.put<unsigned short>(static_cast<unsigned short>(intVal));
-	}
-	else if (intVal > 0)
-	{
-		ret.put<unsigned char>(static_cast<unsigned char>(intVal));
-	}
+	unsigned int absVal = abs(intVal);
+	if (absVal > 0x7FFF)
+		ret.put<int>(intVal);
+	else if (absVal > 0x7F)
+		ret.put<short>(static_cast<short>(intVal));
+	else if (absVal != 0)
+		ret.put<char>(static_cast<char>(intVal));
+
 	return _ret.str();
 }
 
@@ -74,7 +70,6 @@ rawDataBlock PackBuffer(const std::string& strVal)
 				if (!ss.fail())
 					values.push_back(tmp);
 			}
-			//std::cerr << "PACK: '" << strVal << "' -> BW_Float\n";
 			return rawDataBlock(BW_Float, serializeF(values));
 		}
 	}
@@ -99,10 +94,8 @@ rawDataBlock PackBuffer(const std::string& strVal)
 	//check if we can B64 this
 	if (B64::Is(strVal))
 	{
-		//std::cerr << "PACK: '" << strVal << "' -> BW_Blob\n";
 		return rawDataBlock(BW_Blob, B64::Decode(strVal));
 	}
 
-	//std::cerr << "PACK: '" << strVal << "' -> BW_String\n";
 	return rawDataBlock(BW_String, strVal);
 }

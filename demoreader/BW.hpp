@@ -37,7 +37,7 @@ namespace BigWorld
 
 	struct DataNode
 	{
-		short nameIdx;
+		unsigned short nameIdx;
 		DataDescriptor data;
 	};
 

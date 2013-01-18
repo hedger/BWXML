@@ -136,7 +136,6 @@ std::string BWXMLWriter::serializeSection(const ptree& node)
 	dataArray childData;
 	for (auto it=node.begin(); it!=node.end(); ++it)
 	{
-		//std::cout << "For " << it->first << " : ";
 		if (!it->first.compare("<xmlcomment>")) // skipping comments
 			continue;
 		childData.push_back(dataBlock(resolveString(it->first), serializeNode(it->second, false)));
@@ -145,12 +144,10 @@ std::string BWXMLWriter::serializeSection(const ptree& node)
 	DataDescriptor ownDescriptor = BuildDescriptor(ownData, 0);
 	ret.put<short>(childData.size());
 	ret.put<DataDescriptor>(ownDescriptor);
-	ret.putString(ownData.data, false);
-	
+
 	int currentOffset = ownDescriptor.offset();
 	for (auto it=childData.begin(); it!=childData.end(); ++it)
 	{
-		//std::cout << "off=" << currentOffset << std::endl;
 		DataNode bwNode;
 		bwNode.nameIdx = it->stringId;
 		bwNode.data = BuildDescriptor(it->data, currentOffset);
@@ -158,6 +155,7 @@ std::string BWXMLWriter::serializeSection(const ptree& node)
 		currentOffset = bwNode.data.offset();
 	}
 	
+	ret.putString(ownData.data, false);
 	for (auto it=childData.begin(); it!=childData.end(); ++it)
 	{
 		ret.putString(it->data.data, false);
