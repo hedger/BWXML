@@ -6,18 +6,21 @@
 #include "BW.hpp"
 #include <boost/property_tree/ptree.hpp>
 
-class BWXMLReader
+namespace BWPack
 {
-public:
-  BWXMLReader(const std::string& fname);
-  void saveTo(const std::string& destname);
+	class BWXMLReader
+	{
+	public:
+		BWXMLReader(const std::string& fname);
+		void saveTo(const std::string& destname) const;
 
-protected:
-  StreamReader mStream;
-  std::vector<std::string> mStrings;
-  boost::property_tree::ptree mTree;
+	protected:
+		IO::StreamReader mStream;
+		std::vector<std::string> mStrings;
+		boost::property_tree::ptree mTree;
 
-  void ReadStringTable();
-  boost::property_tree::ptree ReadSection();
-	void readData(BigWorld::DataDescriptor descr, boost::property_tree::ptree& current_node, int prev_offset);
-};
+		void ReadStringTable();
+		boost::property_tree::ptree ReadSection();
+		void readData(BigWorld::DataDescriptor descr, boost::property_tree::ptree& current_node, int prev_offset);
+	};
+}

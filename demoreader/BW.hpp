@@ -30,8 +30,8 @@ namespace BigWorld
 			__raw = ((static_cast<unsigned int>(type) << 28) | offset);
 		}
 
-		PackedDataType typeId() {return static_cast<PackedDataType>(__raw >> 28); };
-		unsigned int offset() {return __raw & 0x0FFFFFFF; };
+		PackedDataType typeId() const {return static_cast<PackedDataType>(__raw >> 28); };
+		unsigned int offset() const {return __raw & 0x0FFFFFFF; };
 	};
 	static_assert(sizeof(DataDescriptor) == 4, "Wrong sizeof DataDescriptor, check your compiler settings!");
 
