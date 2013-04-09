@@ -9,6 +9,7 @@
 #include <boost/filesystem.hpp>
 using namespace boost::filesystem;
 
+#include <boost/thread.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
 namespace bpo = boost::program_options;
@@ -47,7 +48,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	desc.add_options()
 		("help", "produce help message")
 		("pack", "pack files instead of unpacking")
+    ("verbose", "print information about each file")
 		("selftest", "perform reversed operation on produced files")
+    ("threads", bpo::value<int>()->default_value(boost::thread::hardware_concurrency() + 1), "sets the size of a worker pool. Default = n_cores + 1")
 		//("key", bpo::value<int>(&encryptionKey)->default_value(10), "encryption key")
 		("input", bpo::value< std::vector<std::string> >(), "input files/directories")
 		("output", bpo::value< std::string >()->default_value("decrypted/"), "directory to output files")
@@ -75,8 +78,9 @@ int _tmain(int argc, _TCHAR* argv[])
 		return 0;
 	}
 
-	bool doPack = vm.count("pack");
-	bool selfTest = vm.count("selftest");
+	bool doPack = (vm.count("pack") != 0);
+  bool verbose = (vm.count("verbose") != 0);
+	bool selfTest = (vm.count("selftest") != 0);
 
 	auto inputPaths = vm["input"].as< std::vector<std::string> >();
 	std::string srcfile = ""; 
@@ -111,32 +115,53 @@ int _tmain(int argc, _TCHAR* argv[])
 			return 2;
 		}
 
-		std::string commonPrefix =  FindCommonPrefix(valid_paths);
-		if (commonPrefix.empty())
-			commonPrefix = path(valid_paths[0]).parent_path().string();
 
-		for (auto it=valid_paths.begin(); it!=valid_paths.end(); ++it)
-		{
-			std::string rel_path = it->string().substr(commonPrefix.length());
-			std::cout << rel_path << " : ";
-			std::string target_path = destdir + rel_path;
-			
-			path _target_path = path(target_path).parent_path();
-			if (!exists(_target_path))
-				create_directories(_target_path);
+    std::string commonPrefix =  FindCommonPrefix(valid_paths);
+    if (commonPrefix.empty())
+      commonPrefix = path(valid_paths[0]).parent_path().string();
 
-			try
-			{
-				convert(it->string(), target_path, doPack);
-        if (selfTest)
-          convert(target_path, target_path+".test", !doPack);
-			}
-			catch (std::exception e)
-			{
-				std::cerr << "ERROR: " << e.what() << std::endl;
-			}
-		}
-	}	 
+    int nThreads = vm["threads"].as<int>();
+    std::cout << "Starting a pool with " << nThreads << " workers" << std::endl;
+
+    auto workerThread = [&](int num)
+    {
+      for (size_t i=num; i < valid_paths.size(); i += nThreads)
+      {
+        std::string rel_path = valid_paths.at(i).string().substr(commonPrefix.length());
+        if (verbose)
+          std::cout << rel_path << " : ";
+        std::string target_path = destdir + rel_path;
+
+        path _target_path = path(target_path);
+        _target_path = _target_path.parent_path();
+        if (!exists(_target_path))
+          create_directories(_target_path);
+
+        try
+        {
+          convert(valid_paths.at(i).string(), target_path, doPack);
+          if (selfTest)
+            convert(target_path, target_path+".test", !doPack);
+          std::cout << "+";
+        }
+        catch (std::exception e)
+        {
+          if (verbose)
+            std::cout << "ERROR: " << e.what();
+          else
+          std::cout << "!";
+        }
+        if (verbose)
+          std::cerr << std::endl;
+      }
+    };
+
+    boost::thread_group pool;
+    for (int i=0; i<nThreads; ++i)
+      pool.create_thread(boost::bind<void>(workerThread, i));
+
+    pool.join_all();
+	}
 
 	catch (const std::exception& e)
 	{

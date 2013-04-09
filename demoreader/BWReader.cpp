@@ -37,7 +37,7 @@ namespace BWPack
 			!tmp.empty(); 
 			tmp = mStream.getNullTerminatedString())
 			mStrings.push_back(tmp);
-		std::cout << "Collected " << mStrings.size() << " strings." << std::endl;
+		//std::cout << "Collected " << mStrings.size() << " strings." << std::endl;
 	};
 
 	void BWXMLReader::readData(DataDescriptor descr, ptree& current_node, int prev_offset)
