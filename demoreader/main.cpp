@@ -1,5 +1,18 @@
-// demoreader.cpp : Defines the entry point for the console application.
-//
+/*
+Copyright 2013 hedger
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 
 #include "stdafx.h"
 
@@ -20,10 +33,10 @@ namespace bpo = boost::program_options;
 void convert(std::string src, std::string dest, bool doPack)
 {
 	//std::cout << src << " -> " << dest << std::endl;
-  if (doPack)
-    BWPack::BWXMLWriter(src).saveTo(dest);
-  else
-    BWPack::BWXMLReader(src).saveTo(dest);
+	if (doPack)
+		BWPack::BWXMLWriter(src).saveTo(dest);
+	else
+		BWPack::BWXMLReader(src).saveTo(dest);
 }
 
 std::string FindCommonPrefix(const std::vector<path>& paths)
@@ -48,9 +61,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	desc.add_options()
 		("help", "produce help message")
 		("pack", "pack files instead of unpacking")
-    ("verbose", "print information about each file")
+		("verbose", "print information about each file")
 		("selftest", "perform reversed operation on produced files")
-    ("threads", bpo::value<int>()->default_value(boost::thread::hardware_concurrency() + 1), "sets the size of a worker pool. Default = n_cores + 1")
+		("threads", bpo::value<int>()->default_value(boost::thread::hardware_concurrency() + 1), "sets the size of a worker pool. Default = n_cpu_cores + 1")
 		//("key", bpo::value<int>(&encryptionKey)->default_value(10), "encryption key")
 		("input", bpo::value< std::vector<std::string> >(), "input files/directories")
 		("output", bpo::value< std::string >()->default_value("decrypted/"), "directory to output files")
@@ -60,6 +73,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	po.add("input", -1);
 
 	bpo::variables_map vm;
+
+	std::cout << "BWXML v1.0 by hedger" << std::endl;
 
 	try
 	{
@@ -79,7 +94,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	bool doPack = (vm.count("pack") != 0);
-  bool verbose = (vm.count("verbose") != 0);
+	bool verbose = (vm.count("verbose") != 0);
 	bool selfTest = (vm.count("selftest") != 0);
 
 	auto inputPaths = vm["input"].as< std::vector<std::string> >();
@@ -116,56 +131,57 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 
 
-    std::string commonPrefix =  FindCommonPrefix(valid_paths);
-    if (commonPrefix.empty())
-      commonPrefix = path(valid_paths[0]).parent_path().string();
+		std::string commonPrefix =	FindCommonPrefix(valid_paths);
+		if (commonPrefix.empty())
+			commonPrefix = path(valid_paths[0]).parent_path().string();
 
-    int nThreads = vm["threads"].as<int>();
-    std::cout << "Starting a pool with " << nThreads << " workers" << std::endl;
+		int nThreads = vm["threads"].as<int>();
+		std::cout << "Starting a pool with " << nThreads << " workers" << std::endl;
 
-    auto workerThread = [&](int num)
-    {
-      for (size_t i=num; i < valid_paths.size(); i += nThreads)
-      {
-        std::string rel_path = valid_paths.at(i).string().substr(commonPrefix.length());
-        if (verbose)
-          std::cout << rel_path << " : ";
-        std::string target_path = destdir + rel_path;
+		auto workerThread = [&](int num)
+		{
+			for (size_t i=num; i < valid_paths.size(); i += nThreads)
+			{
+				std::string rel_path = valid_paths.at(i).string().substr(commonPrefix.length());
+				if (verbose)
+					std::cout << rel_path << " : ";
+				std::string target_path = destdir + rel_path;
 
-        path _target_path = path(target_path);
-        _target_path = _target_path.parent_path();
-        if (!exists(_target_path))
-          create_directories(_target_path);
+				path _target_path = path(target_path);
+				_target_path = _target_path.parent_path();
+				if (!exists(_target_path))
+					create_directories(_target_path);
 
-        try
-        {
-          convert(valid_paths.at(i).string(), target_path, doPack);
-          if (selfTest)
-            convert(target_path, target_path+".test", !doPack);
-          std::cout << "+";
-        }
-        catch (std::exception e)
-        {
-          if (verbose)
-            std::cout << "ERROR: " << e.what();
-          else
-          std::cout << "!";
-        }
-        if (verbose)
-          std::cerr << std::endl;
-      }
-    };
+				try
+				{
+					convert(valid_paths.at(i).string(), target_path, doPack);
+					if (selfTest)
+						convert(target_path, target_path+".test", !doPack);
+					std::cout << "+";
+				}
+				catch (std::exception e)
+				{
+					if (verbose)
+						std::cout << "ERROR: " << e.what();
+					else
+						std::cout << "!";
+				}
+				if (verbose)
+					std::cerr << std::endl;
+			}
+		};
 
-    boost::thread_group pool;
-    for (int i=0; i<nThreads; ++i)
-      pool.create_thread(boost::bind<void>(workerThread, i));
+		boost::thread_group pool;
+		for (int i=0; i<nThreads; ++i)
+			pool.create_thread(boost::bind<void>(workerThread, i));
 
-    pool.join_all();
+		pool.join_all();
 	}
 
 	catch (const std::exception& e)
 	{
 		std::cerr << "ERROR: " << e.what() << std::endl;
+		return -1;
 	}
 	return 0;
 }
