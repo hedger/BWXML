@@ -74,7 +74,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	bpo::variables_map vm;
 
-	std::cout << "BWXML v1.0 by hedger" << std::endl;
+	std::cout << "BWXML v1.01 by hedger" << std::endl;
 
 	try
 	{
@@ -113,7 +113,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			if (!exists(current))
 				std::cout << "Path '" << *it << "' not found or not accessible, skipping" << std::endl;
 			if (is_directory(current))
-				std::copy(recursive_directory_iterator(current), recursive_directory_iterator(), back_inserter(paths));
+				std::copy(recursive_directory_iterator(current, symlink_option::recurse), recursive_directory_iterator(), back_inserter(paths));
 			if (is_regular_file(current))
 				paths.push_back(current);
 		}
@@ -183,5 +183,6 @@ int _tmain(int argc, _TCHAR* argv[])
 		std::cerr << "ERROR: " << e.what() << std::endl;
 		return -1;
 	}
+	std::cout << std::endl << "Done." << std::endl;
 	return 0;
 }
