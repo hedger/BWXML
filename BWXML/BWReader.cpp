@@ -31,11 +31,11 @@ namespace BWPack
 	{
 		int magic = mStream.get<int>();
 		if (magic != PACKED_SECTION_MAGIC)
-			throw std::exception("Wrong header magic");
+			throw std::runtime_error("Wrong header magic");
 
 		unsigned char version = mStream.get<char>();
 		if (version != 0)
-			throw std::exception("Unsupported file version");
+			throw std::runtime_error("Unsupported file version");
 		ReadStringTable();
 
 		mTree.put_child("root", ReadSection());
@@ -91,7 +91,7 @@ namespace BWPack
 				current_node.put_value(0);
 				break;
 			default:
-				throw std::exception("Unsupported int size!");
+				throw std::runtime_error("Unsupported int size!");
 			}
 			break;
 		case BW_Float:
@@ -134,7 +134,7 @@ namespace BWPack
 			std::cerr <<"unsupported section TYPE_ENCRYPTED_BLOB!" << std::endl;
 			break;
 		default:
-			throw std::exception("Unknown section!");
+			throw std::runtime_error("Unknown section!");
 		}
 	}
 

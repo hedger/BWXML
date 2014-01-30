@@ -39,10 +39,10 @@ namespace BWPack
 		}
 		catch(...)
 		{
-			throw std::exception("XML parsing error");
+			throw std::runtime_error("XML parsing error");
 		};
 		if (mTree.size() != 1)
-			throw std::exception("XML file must contain only 1 root level node");
+			throw std::runtime_error("XML file must contain only 1 root level node");
 
 		mTree.swap(mTree.begin()->second); // swapping the whole tree to its first node
 	}
@@ -78,7 +78,7 @@ namespace BWPack
 	{
 		auto pos = std::find(mStrings.begin(), mStrings.end(), str);
 		if (pos == mStrings.end())
-			throw std::exception("String key not found!");
+			throw std::runtime_error("String key not found!");
 		return (pos - mStrings.begin());
 	}
 
@@ -140,7 +140,7 @@ namespace BWPack
 		std::ofstream mFile;
 		mFile.open(destname, std::ios::binary);
 		if (!mFile.is_open())
-			throw std::exception("Can't open the file");
+			throw std::runtime_error("Can't open the file");
 		mFile << outbuf.rdbuf();
 		mFile.close();
 
