@@ -18,6 +18,7 @@ limitations under the License.
 
 #include <vector>
 #include <iterator>
+#include <stdexcept>
 
 namespace BWPack
 {

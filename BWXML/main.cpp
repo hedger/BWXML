@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#include "stdafx.h"
-
 #include "BWReader.h"
 #include "BWWriter.h"
 
@@ -55,7 +53,7 @@ std::string FindCommonPrefix(const std::vector<path>& paths)
 	return s1;
 }
 
-int _tmain(int argc, _TCHAR* argv[])
+int main(int argc, char* argv[])
 {
 	bpo::options_description desc("Allowed options");
 	desc.add_options()
