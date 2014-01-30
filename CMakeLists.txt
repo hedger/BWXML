@@ -2,20 +2,22 @@ project(BWXML)
 cmake_minimum_required( VERSION 2.8 )
 
 #
+# Compiler options
+#
+if(MSVC)
+    set(Boost_USE_STATIC_LIBS ON)
+else(MSVC)
+    list(APPEND CMAKE_CXX_FLAGS "-std=c++0x")
+endif(MSVC)
+
+#
 # Depends
 #
-find_package(Boost COMPONENTS system filesystem program_options thread REQUIRED)
+find_package(Boost COMPONENTS filesystem program_options serialization system thread REQUIRED)
 
 if (NOT Boost_FOUND)
     message(FATAL_ERROR "Fatal error: Boost required.\n")
 endif (NOT Boost_FOUND)
-
-#
-# Compiler options
-#
-if(NOT MSVC)
-    list(APPEND CMAKE_CXX_FLAGS "-std=c++0x")
-endif(NOT MSVC)
 
 #
 # Build
