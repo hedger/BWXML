@@ -18,6 +18,7 @@ limitations under the License.
 
 #include <vector>
 #include <iterator>
+#include <stdexcept>
 
 namespace BWPack
 {
@@ -27,7 +28,7 @@ namespace BWPack
 		{
 			mInput.open(fname, std::ios::binary);
 			if (!mInput.is_open())
-				throw std::exception("File not found");
+				throw std::runtime_error("File not found");
 		}
 
 		StreamReader::~StreamReader()
