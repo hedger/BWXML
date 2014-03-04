@@ -1,5 +1,5 @@
 /*
-Copyright 2013 hedger
+Copyright 2013-2014 hedger
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -78,6 +78,9 @@ namespace BWPack
 		case BW_Int:
 			switch (var_size)
 			{
+			case 8:
+				current_node.put_value(mStream.get<long long>());
+				break;
 			case 4:
 				current_node.put_value(mStream.get<int>());
 				break;

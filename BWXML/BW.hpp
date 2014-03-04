@@ -1,5 +1,5 @@
 /*
-Copyright 2013 hedger
+Copyright 2013-2014 hedger
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ namespace BigWorld
 	};
 
 #pragma pack(push, 1)
+	// FIXME: use union?
 	class DataDescriptor
 	{
 		unsigned int __raw;

@@ -1,5 +1,5 @@
 /*
-Copyright 2013 hedger
+Copyright 2013-2014 hedger
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
 
 	bpo::variables_map vm;
 
-	std::cout << "BWXML v1.01 by hedger" << std::endl;
+	std::cout << "BWXML v1.02 by hedger" << std::endl;
 
 	try
 	{

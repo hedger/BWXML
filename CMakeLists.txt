@@ -26,7 +26,8 @@ aux_source_directory(BWXML SOURCES)
 link_directories(${Boost_LIBRARY_DIRS})
 include_directories(BWXML ${Boost_INCLUDE_DIRS})
 
-add_executable(bwxml ${SOURCES})
+file (GLOB headers BWXML/*.h*)
+add_executable(bwxml ${SOURCES} ${headers})
 target_link_libraries(bwxml ${Boost_LIBRARIES})
 
 #

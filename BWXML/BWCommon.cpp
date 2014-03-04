@@ -1,5 +1,5 @@
 /*
-Copyright 2013 hedger
+Copyright 2013-2014 hedger
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ namespace BWPack
 	using namespace BigWorld;
 	using namespace IO;
 
-	static std::string serializeF(std::vector<float> floatVals)
+	static std::string serializeF(const std::vector<float>& floatVals)
 	{
 		std::stringstream _ret;
 		StreamBufWriter ret(_ret.rdbuf());
@@ -36,15 +36,17 @@ namespace BWPack
 		return _ret.str();
 	}
 
-	static std::string serializeI(int intVal)
+	static std::string serializeI(const long long& intVal)
 	{
 		std::stringstream _ret;
 		StreamBufWriter ret(_ret.rdbuf());
 
-		unsigned int absVal = abs(intVal);
-		if (absVal > 0x7FFF)
-			ret.put<int>(intVal);
-		else if (absVal > 0x7F)
+		unsigned long long absVal = abs(intVal);
+		if (absVal > std::numeric_limits<long>::max())
+			ret.put<long long>(intVal);
+		else if (absVal > std::numeric_limits<short>::max())
+			ret.put<int>(static_cast<int>(intVal));
+		else if (absVal > std::numeric_limits<char>::max())
 			ret.put<short>(static_cast<short>(intVal));
 		else if (absVal != 0)
 			ret.put<char>(static_cast<char>(intVal));
@@ -52,7 +54,7 @@ namespace BWPack
 		return _ret.str();
 	}
 
-	static std::string serializeB(bool boolVal)
+	static std::string serializeB(const bool boolVal)
 	{
 		std::stringstream _ret;
 		StreamBufWriter ret(_ret.rdbuf());
@@ -96,7 +98,7 @@ namespace BWPack
 		{
 			std::stringstream ss;
 			ss << strVal;
-			int i;
+			long long i;
 			ss >> i;
 			if (!ss.fail() && ss.eof())
 				return rawDataBlock(BW_Int, serializeI(i));
