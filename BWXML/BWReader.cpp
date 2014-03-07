@@ -33,7 +33,7 @@ namespace BWPack
 		if (magic != PACKED_SECTION_MAGIC)
 			throw std::runtime_error("Wrong header magic");
 
-		unsigned char version = mStream.get<char>();
+		unsigned char version = mStream.get<unsigned char>();
 		if (version != 0)
 			throw std::runtime_error("Unsupported file version");
 		ReadStringTable();
@@ -67,14 +67,16 @@ namespace BWPack
 		switch(descr.typeId())
 		{
 		case BW_Section:
-			current_node.swap(ReadSection()); //yay recursion!
+			current_node = ReadSection(); //yay recursion!
 			break;
+
 		case BW_String:
 			contentBuffer << mStream.getString(var_size);
 			if (PackBuffer(contentBuffer.str()).type != BW_String)
 				current_node.put("<xmlcomment>", "BW_String");
 			current_node.put_value(contentBuffer.str());
 			break;
+
 		case BW_Int:
 			switch (var_size)
 			{
@@ -88,6 +90,7 @@ namespace BWPack
 				current_node.put_value(mStream.get<short>());
 				break;
 			case 1:
+				// static_cast'ing to force ptree interprete our 1-byte value as a number, not a character
 				current_node.put_value(static_cast<int>(mStream.get<char>()));
 				break;
 			case 0:
@@ -97,20 +100,21 @@ namespace BWPack
 				throw std::runtime_error("Unsupported int size!");
 			}
 			break;
+
 		case BW_Float:
 			assert(var_size % sizeof(float) == 0);
 			contentBuffer << std::fixed << std::setfill('\t');
-			if (var_size / sizeof(float) == 12) // we've got a matrix!
+			if (var_size / sizeof(float) == BW_MATRIX_SIZE) // we've got a matrix!
 			{
-				for (int i=0; i<4; ++i) // rows
+				for (int i=0; i<BW_MATRIX_NROWS; ++i)
 				{
-					for (int j=0; j<3; ++j) //columns
+					for (int j=0; j<BW_MATRIX_NCOLS; ++j)
 					{
 						if (!contentBuffer.str().empty())
 							contentBuffer << " ";
 						contentBuffer << mStream.get<float>();
 					}
-					current_node.put("row"+boost::lexical_cast<std::string>(i), contentBuffer.str());
+					current_node.put("row" + boost::lexical_cast<std::string>(i), contentBuffer.str());
 					contentBuffer.str(""); // clearing our buffer
 				}
 				break;
@@ -124,20 +128,24 @@ namespace BWPack
 			}
 			current_node.put_value(contentBuffer.str());
 			break;
+
 		case BW_Bool:
 			current_node.put_value((var_size != 0));
 			mStream.getString(var_size);
 			break;
+
 		case BW_Blob:
 			current_node.put_value(B64::Encode(mStream.getString(var_size)));
 			break;
+
 		case BW_Enc_blob:
 			mStream.getString(var_size); // TBD?
 			current_node.put_value("TYPE_ENCRYPTED_BLOB is (yet) unsupported!");
 			std::cerr <<"unsupported section TYPE_ENCRYPTED_BLOB!" << std::endl;
 			break;
+
 		default:
-			throw std::runtime_error("Unknown section!");
+			throw std::runtime_error("Unsupported section type!");
 		}
 	}
 

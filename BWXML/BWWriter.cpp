@@ -85,17 +85,17 @@ namespace BWPack
 	// 'simple' indicates that we need the node's exact value, even if it has children
 	rawDataBlock BWXMLWriter::serializeNode(const boost::property_tree::ptree& node_value, bool simple) const
 	{
-		if (node_value.size() == 4) // maybe that's a matrix?..
+		if (node_value.size() == BW_MATRIX_NROWS) // maybe that's a matrix?..
 		{
 			std::vector<boost::optional< const ptree& > > rows;
-			for (int i=0; i<4; ++i)
+			for (int i=0; i<BW_MATRIX_NROWS; ++i)
 			{
 				auto row = node_value.get_child_optional("row"+boost::lexical_cast<std::string>(i));
 				if (!row) // bad luck.
 					break;
 				rows.push_back(row);
 			}
-			if (rows.size() == 4) // we've found all 4 required rows
+			if (rows.size() == BW_MATRIX_NROWS) // we've found all 4 required rows
 			{
 				std::stringstream buffer;
 				for (auto it=rows.begin(); it!=rows.end(); ++it)

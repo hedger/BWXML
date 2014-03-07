@@ -45,21 +45,33 @@ std::string FindCommonPrefix(const std::vector<path>& paths)
 	auto lenCmp = [](const path& p1, const path& p2){return p1.string().length() < p2.string().length(); };
 	s1 = (*std::min_element(paths.begin(), paths.end(), lenCmp)).string();
 	s2 = (*std::max_element(paths.begin(), paths.end(), lenCmp)).string();
+
 	for (size_t i=0; i<s1.length(); ++i)
 	{
 		if (s1[i] != s2[i])
-			return s1.substr(0, i);
+		{
+			s1 = s1.substr(0, i);
+			break;
+		}
 	}
+
+	path s1p(s1);
+	if (!exists(s1p))
+		s1 = s1p.parent_path().string();
 	return s1;
 }
 
 int main(int argc, char* argv[])
 {
+	std::cout << "BWXML v1.03 by hedger" << std::endl;
+
 	bpo::options_description desc("Allowed options");
 	desc.add_options()
 		("help", "produce help message")
 		("pack", "pack files instead of unpacking")
+#ifndef _DEBUG
 		("verbose", "print information about each file")
+#endif
 		("selftest", "perform reversed operation on produced files")
 		("threads", bpo::value<int>()->default_value(boost::thread::hardware_concurrency() + 1), "sets the size of a worker pool. Default = n_cpu_cores + 1")
 		//("key", bpo::value<int>(&encryptionKey)->default_value(10), "encryption key")
@@ -71,9 +83,6 @@ int main(int argc, char* argv[])
 	po.add("input", -1);
 
 	bpo::variables_map vm;
-
-	std::cout << "BWXML v1.02 by hedger" << std::endl;
-
 	try
 	{
 		bpo::store(bpo::command_line_parser(argc, argv).
@@ -92,7 +101,11 @@ int main(int argc, char* argv[])
 	}
 
 	bool doPack = (vm.count("pack") != 0);
+#ifndef _DEBUG
 	bool verbose = (vm.count("verbose") != 0);
+#else
+	bool verbose = true;
+#endif
 	bool selfTest = (vm.count("selftest") != 0);
 
 	auto inputPaths = vm["input"].as< std::vector<std::string> >();
@@ -109,18 +122,20 @@ int main(int argc, char* argv[])
 		{
 			path current = path(*it);
 			if (!exists(current))
-				std::cout << "Path '" << *it << "' not found or not accessible, skipping" << std::endl;
+				std::cout << "Path '" << *it << "' is not found or not accessible, skipping" << std::endl;
 			if (is_directory(current))
-				std::copy(recursive_directory_iterator(current, symlink_option::recurse), recursive_directory_iterator(), back_inserter(paths));
+				std::copy(recursive_directory_iterator(current, symlink_option::recurse), 
+				recursive_directory_iterator(), back_inserter(paths));
 			if (is_regular_file(current))
 				paths.push_back(current);
 		}
 
 		std::cout << "filtering... ";
 
-		std::copy_if(paths.begin(), paths.end(), std::back_inserter(valid_paths), [](const path& p){return is_regular_file(p);});
+		std::copy_if(paths.begin(), paths.end(), std::back_inserter(valid_paths),
+			[](const path& p){return is_regular_file(p);});
 
-		std::cout << "done. \nFound " << valid_paths.size() << " files, processing to " << destdir << std::endl;
+		std::cout << "done. \nFound " << valid_paths.size() << " file(s), processing to " << destdir << std::endl;
 
 		if (valid_paths.empty())
 		{
@@ -157,7 +172,7 @@ int main(int argc, char* argv[])
 						convert(target_path, target_path+".test", !doPack);
 					std::cout << "+";
 				}
-				catch (std::exception e)
+				catch (const std::exception& e)
 				{
 					if (verbose)
 						std::cout << "ERROR: " << e.what();
@@ -181,6 +196,7 @@ int main(int argc, char* argv[])
 		std::cerr << "ERROR: " << e.what() << std::endl;
 		return -1;
 	}
+
 	std::cout << std::endl << "Done." << std::endl;
 	return 0;
 }

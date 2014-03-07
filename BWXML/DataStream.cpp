@@ -51,8 +51,8 @@ namespace BWPack
 
 		std::string StreamReader::getNullTerminatedString()
 		{
-			char buf[255] = { 0 };
-			mInput.getline(buf, 255, '\0');
+			char buf[MAX_STRING_LEN] = { 0 };
+			mInput.getline(buf, MAX_STRING_LEN, '\0');
 			return std::string(buf);
 		}
 

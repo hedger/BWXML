@@ -117,5 +117,6 @@ namespace BWPack
 			return rawDataBlock(BW_Blob, B64::Decode(strVal));
 		}
 
+		// fallback
 		return rawDataBlock(BW_String, strVal);
 	}}

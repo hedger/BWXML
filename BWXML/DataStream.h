@@ -29,6 +29,7 @@ namespace BWPack
 	{
 		class StreamReader
 		{
+			static const int MAX_STRING_LEN = 255;
 			std::ifstream mInput;
 
 		public:

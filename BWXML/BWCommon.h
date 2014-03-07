@@ -21,6 +21,10 @@ limitations under the License.
 
 namespace BWPack
 {
+	static const int BW_MATRIX_NROWS = 4;
+	static const int BW_MATRIX_NCOLS = 3;
+	static const int BW_MATRIX_SIZE = BW_MATRIX_NROWS * BW_MATRIX_NCOLS;
+
 	struct rawDataBlock
 	{
 		BigWorld::PackedDataType type;
@@ -33,7 +37,8 @@ namespace BWPack
 	{
 		short stringId;
 		rawDataBlock data;
-		dataBlock(const short _stringId, rawDataBlock& _data) : stringId(_stringId), data(_data) {};
+		dataBlock(const short _stringId, rawDataBlock& _data) 
+			: stringId(_stringId), data(_data) {};
 	};
 
 	rawDataBlock PackBuffer(const std::string& strVal);
