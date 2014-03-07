@@ -29,7 +29,7 @@ namespace BWPack
 	{
 		BigWorld::PackedDataType type;
 		std::string data;
-		rawDataBlock(const BigWorld::PackedDataType _type,  const std::string& _data)
+		rawDataBlock(const BigWorld::PackedDataType _type, const std::string _data)
 			: type(_type), data(_data) {};
 	};
 
@@ -37,7 +37,7 @@ namespace BWPack
 	{
 		short stringId;
 		rawDataBlock data;
-		dataBlock(const short _stringId, rawDataBlock& _data) 
+		dataBlock(const short _stringId, rawDataBlock _data) 
 			: stringId(_stringId), data(_data) {};
 	};
 
