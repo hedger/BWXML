@@ -17,10 +17,11 @@ limitations under the License.
 #pragma once
 
 #include <cassert>
+#include <cstdint>
 
 namespace BigWorld
 {
-	static const int PACKED_SECTION_MAGIC = 0x62a14e45;
+	static const uint32_t PACKED_SECTION_MAGIC = 0x62a14e45;
 
 	enum PackedDataType
 	{
@@ -38,23 +39,23 @@ namespace BigWorld
 	// FIXME: use union?
 	class DataDescriptor
 	{
-		unsigned int __raw;
+		uint32_t __raw;
 	public:
 		DataDescriptor() : __raw(0)	{};
-		DataDescriptor(PackedDataType type, unsigned int offset)
+		DataDescriptor(PackedDataType type, uint32_t offset)
 		{
 			assert(offset < 0x0FFFFFFF);
-			__raw = ((static_cast<unsigned int>(type) << 28) | offset);
+			__raw = ((static_cast<uint32_t>(type) << 28) | offset);
 		}
 
 		PackedDataType typeId() const {return static_cast<PackedDataType>(__raw >> 28); };
-		unsigned int offset() const {return __raw & 0x0FFFFFFF; };
+		uint32_t offset() const {return __raw & 0x0FFFFFFF; };
 	};
 	static_assert(sizeof(DataDescriptor) == 4, "Wrong sizeof DataDescriptor, check your compiler settings!");
 
 	struct DataNode
 	{
-		unsigned short nameIdx;
+		uint16_t nameIdx;
 		DataDescriptor data;
 	};
 

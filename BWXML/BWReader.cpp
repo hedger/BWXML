@@ -29,11 +29,11 @@ namespace BWPack
 
 	BWXMLReader::BWXMLReader(const std::string& fname) : mStream(fname)
 	{
-		int magic = mStream.get<int>();
+		uint32_t magic = mStream.get<uint32_t>();
 		if (magic != PACKED_SECTION_MAGIC)
 			throw std::runtime_error("Wrong header magic");
 
-		unsigned char version = mStream.get<unsigned char>();
+		uint8_t version = mStream.get<uint8_t>();
 		if (version != 0)
 			throw std::runtime_error("Unsupported file version");
 		ReadStringTable();
@@ -56,11 +56,11 @@ namespace BWPack
 		//std::cout << "Collected " << mStrings.size() << " strings." << std::endl;
 	};
 
-	void BWXMLReader::readData(DataDescriptor descr, ptree& current_node, int prev_offset)
+	void BWXMLReader::readData( BigWorld::DataDescriptor descr, boost::property_tree::ptree& current_node, uint32_t prev_offset )
 	{
 		current_node.clear();
-		int startPos = prev_offset, endPos = descr.offset();
-		int var_size = endPos - startPos;
+		uint32_t startPos = prev_offset, endPos = descr.offset();
+		uint32_t var_size = endPos - startPos;
 		assert(var_size >= 0);
 
 		std::stringstream contentBuffer;
@@ -81,17 +81,16 @@ namespace BWPack
 			switch (var_size)
 			{
 			case 8:
-				current_node.put_value(mStream.get<long long>());
+				current_node.put_value(mStream.get<int64_t>());
 				break;
 			case 4:
-				current_node.put_value(mStream.get<int>());
+				current_node.put_value(mStream.get<int32_t>());
 				break;
 			case 2:
-				current_node.put_value(mStream.get<short>());
+				current_node.put_value(mStream.get<int16_t>());
 				break;
 			case 1:
-				// static_cast'ing to force ptree interprete our 1-byte value as a number, not a character
-				current_node.put_value(static_cast<int>(mStream.get<char>()));
+				current_node.put_value(mStream.get<int8_t>());
 				break;
 			case 0:
 				current_node.put_value(0);
@@ -106,9 +105,9 @@ namespace BWPack
 			contentBuffer << std::fixed << std::setfill('\t');
 			if (var_size / sizeof(float) == BW_MATRIX_SIZE) // we've got a matrix!
 			{
-				for (int i=0; i<BW_MATRIX_NROWS; ++i)
+				for (size_t i=0; i<BW_MATRIX_NROWS; ++i)
 				{
-					for (int j=0; j<BW_MATRIX_NCOLS; ++j)
+					for (size_t j=0; j<BW_MATRIX_NCOLS; ++j)
 					{
 						if (!contentBuffer.str().empty())
 							contentBuffer << " ";
@@ -152,7 +151,7 @@ namespace BWPack
 	ptree BWXMLReader::ReadSection()
 	{
 		ptree current_node;
-		int nChildren = mStream.get<short>();
+		int nChildren = mStream.get<uint16_t>();
 
 		DataDescriptor ownData = mStream.get<DataDescriptor>();
 

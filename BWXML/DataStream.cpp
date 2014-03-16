@@ -36,7 +36,7 @@ namespace BWPack
 			mInput.close();
 		}
 
-		std::string StreamReader::getString(int len)
+		std::string StreamReader::getString(size_t len)
 		{
 			std::string ret;
 			if (len)

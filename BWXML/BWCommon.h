@@ -18,6 +18,7 @@ limitations under the License.
 
 #include "BW.hpp"
 #include <string>
+#include <cstdint>
 
 namespace BWPack
 {
@@ -35,9 +36,9 @@ namespace BWPack
 
 	struct dataBlock
 	{
-		short stringId;
+		uint16_t stringId;
 		rawDataBlock data;
-		dataBlock(const short _stringId, rawDataBlock _data) 
+		dataBlock(const uint16_t _stringId, rawDataBlock _data) 
 			: stringId(_stringId), data(_data) {};
 	};
 

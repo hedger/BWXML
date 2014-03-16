@@ -39,10 +39,10 @@ namespace BWPack
 		typedef std::vector<BWPack::dataBlock> dataArray;
 
 		void collectStrings();
-		int  resolveString(const std::string& str) const;
+		uint16_t resolveString(const std::string& str) const;
 		void treeWalker(const boost::property_tree::ptree& node);
 
-		BigWorld::DataDescriptor BuildDescriptor(BWPack::rawDataBlock block, int prevOffset) const;
+		BigWorld::DataDescriptor BuildDescriptor(BWPack::rawDataBlock block, uint32_t prevOffset) const;
 		BWPack::rawDataBlock serializeNode(const boost::property_tree::ptree& nodeVal, bool simple) const;
 		std::string serializeSection(const boost::property_tree::ptree& section) const;
 	};

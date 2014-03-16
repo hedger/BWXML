@@ -28,7 +28,6 @@ namespace BWPack
 {
 	using boost::property_tree::ptree;
 	using namespace BigWorld;
-	using namespace BWPack;
 
 	BWXMLWriter::BWXMLWriter(const std::string& fname)
 	{
@@ -74,12 +73,16 @@ namespace BWPack
 		}
 	}
 
-	int BWXMLWriter::resolveString(const std::string& str) const
+	uint16_t BWXMLWriter::resolveString(const std::string& str) const
 	{
 		auto pos = std::find(mStrings.begin(), mStrings.end(), str);
 		if (pos == mStrings.end())
 			throw std::runtime_error("String key not found!");
-		return (pos - mStrings.begin());
+		size_t strIdx = std::distance(mStrings.begin(), pos);
+		if (strIdx > std::numeric_limits<uint16_t>::max())
+			throw std::runtime_error("String table overflow!");
+
+		return static_cast<uint16_t>(strIdx);
 	}
 
 	// 'simple' indicates that we need the node's exact value, even if it has children
@@ -118,9 +121,12 @@ namespace BWPack
 		return PackBuffer(node_value.data());
 	}
 
-	BigWorld::DataDescriptor BWXMLWriter::BuildDescriptor(rawDataBlock block, int prevOffset) const
+	BigWorld::DataDescriptor BWXMLWriter::BuildDescriptor(rawDataBlock block, uint32_t prevOffset) const
 	{
-		return DataDescriptor(block.type, prevOffset + block.data.length());
+		if (block.data.length() > std::numeric_limits<uint32_t>::max())
+			throw std::runtime_error("Data block is too large");
+
+		return DataDescriptor(block.type, prevOffset + static_cast<uint32_t>(block.data.length()));
 	}
 
 	void BWXMLWriter::saveTo(const std::string& destname)
@@ -130,10 +136,10 @@ namespace BWPack
 		std::stringstream outbuf;
 		IO::StreamBufWriter outstream(outbuf.rdbuf());
 		outstream.put(BigWorld::PACKED_SECTION_MAGIC);
-		outstream.put<char>(0);
+		outstream.put<uint8_t>(0);
 		for (auto it = mStrings.begin(); it!= mStrings.end(); ++it)
 			outstream.putString(*it);
-		outstream.put<char>(0);
+		outstream.put<uint8_t>(0);
 
 		outstream.putString(serializeSection(mTree), false);
 
@@ -161,11 +167,14 @@ namespace BWPack
 			childData.push_back(dataBlock(resolveString(it->first), serializeNode(it->second, false)));
 		}
 
+		if (childData.size() > std::numeric_limits<uint16_t>::max())
+			throw std::runtime_error("Too many children nodes!");
+
 		DataDescriptor ownDescriptor = BuildDescriptor(ownData, 0);
-		ret.put<short>(childData.size());
+		ret.put<uint16_t>(static_cast<uint16_t>(childData.size()));
 		ret.put<DataDescriptor>(ownDescriptor);
 
-		int currentOffset = ownDescriptor.offset();
+		uint32_t currentOffset = ownDescriptor.offset();
 		for (auto it=childData.begin(); it!=childData.end(); ++it)
 		{
 			DataNode bwNode;

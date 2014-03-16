@@ -63,7 +63,7 @@ std::string FindCommonPrefix(const std::vector<path>& paths)
 
 int main(int argc, char* argv[])
 {
-	std::cout << "BWXML v1.03 by hedger" << std::endl;
+	std::cout << "BWXML v1.04 by hedger" << std::endl;
 
 	bpo::options_description desc("Allowed options");
 	desc.add_options()

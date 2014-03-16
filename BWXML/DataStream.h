@@ -44,7 +44,7 @@ namespace BWPack
 				return buf;
 			}
 
-			std::string getString(int len);
+			std::string getString(size_t len);
 			std::string getNullTerminatedString();
 		};
 

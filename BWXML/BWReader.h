@@ -37,6 +37,6 @@ namespace BWPack
 
 		void ReadStringTable();
 		boost::property_tree::ptree ReadSection();
-		void readData(BigWorld::DataDescriptor descr, boost::property_tree::ptree& current_node, int prev_offset);
+		void readData(BigWorld::DataDescriptor descr, boost::property_tree::ptree& current_node, uint32_t prev_offset);
 	};
 }
